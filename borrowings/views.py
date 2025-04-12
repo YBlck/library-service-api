@@ -12,12 +12,12 @@ from borrowings.serializers import (
 class BorrowingViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericViewSet
 ):
-    queryset = Borrowing.objects.all()
+    queryset = Borrowing.objects.select_related("book", "user")
     serializer_class = BorrowingSerializer
 
     def get_queryset(self):
-        self.queryset = Borrowing.objects.filter(user=self.request.user)
-        return self.queryset
+        queryset = self.queryset.filter(user=self.request.user)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "list":
