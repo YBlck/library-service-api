@@ -19,10 +19,12 @@ class Book(models.Model):
         ordering = ["title"]
 
     def __str__(self):
-        return f"{self.title} (author: {self.author})"
+        return f"{self.title} (author: {self.author}, inventory: {self.inventory})"
 
     def reduce_inventory(self):
         if self.inventory > 0:
-            Book.objects.filter(pk=self.pk).update(inventory=self.inventory - 1)
+            Book.objects.filter(pk=self.pk).update(
+                inventory=self.inventory - 1
+            )
             self.refresh_from_db()
         raise ValidationError("This book is out of stock")
