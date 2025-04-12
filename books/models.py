@@ -27,4 +27,5 @@ class Book(models.Model):
                 inventory=self.inventory - 1
             )
             self.refresh_from_db()
-        raise ValidationError("This book is out of stock")
+        else:
+            raise ValidationError("This book is out of stock")
