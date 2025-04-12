@@ -51,7 +51,7 @@ class UnauthorizedUserTests(BooksAPITestCase):
         serializer = BookSerializer(books, many=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(serializer.data, serializer.data)
+        self.assertEqual(response.data, serializer.data)
 
     def test_books_detail(self):
         book = Book.objects.first()
@@ -59,7 +59,7 @@ class UnauthorizedUserTests(BooksAPITestCase):
         serializer = BookSerializer(book)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(serializer.data, serializer.data)
+        self.assertEqual(response.data, serializer.data)
 
     def test_book_create_forbidden(self):
         payload = {
@@ -102,7 +102,7 @@ class AuthorizedUserTests(BooksAPITestCase):
         serializer = BookSerializer(books, many=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(serializer.data, serializer.data)
+        self.assertEqual(response.data, serializer.data)
 
     def test_books_detail(self):
         book = Book.objects.first()
@@ -110,7 +110,7 @@ class AuthorizedUserTests(BooksAPITestCase):
         serializer = BookSerializer(book)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(serializer.data, serializer.data)
+        self.assertEqual(response.data, serializer.data)
 
     def test_book_create_forbidden(self):
         payload = {
@@ -153,7 +153,7 @@ class AdminUserTests(BooksAPITestCase):
         serializer = BookSerializer(books, many=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(serializer.data, serializer.data)
+        self.assertEqual(response.data, serializer.data)
 
     def test_books_detail(self):
         book = Book.objects.first()
@@ -161,7 +161,7 @@ class AdminUserTests(BooksAPITestCase):
         serializer = BookSerializer(book)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(serializer.data, serializer.data)
+        self.assertEqual(response.data, serializer.data)
 
     def test_book_create_allowed(self):
         payload = {
