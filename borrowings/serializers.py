@@ -46,5 +46,31 @@ class BorrowingListSerializer(BorrowingSerializer):
     book = serializers.SlugRelatedField(read_only=True, slug_field="title")
 
 
+class BorrowingListAdminSerializer(BorrowingListSerializer):
+    class Meta:
+        model = Borrowing
+        fields = (
+            "id",
+            "borrowing_date",
+            "expected_return_date",
+            "actual_return_date",
+            "user",
+            "book",
+        )
+
+
 class BorrowingDetailSerializer(BorrowingSerializer):
     book = BookSerializer(read_only=True)
+
+
+class BorrowingDetailAdminSerializer(BorrowingDetailSerializer):
+    class Meta:
+        model = Borrowing
+        fields = (
+            "id",
+            "borrowing_date",
+            "expected_return_date",
+            "actual_return_date",
+            "user",
+            "book",
+        )
