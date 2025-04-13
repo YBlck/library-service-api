@@ -1,4 +1,8 @@
-from rest_framework import mixins
+import datetime
+
+from rest_framework import mixins, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from borrowings.models import Borrowing
@@ -9,6 +13,7 @@ from borrowings.serializers import (
     BorrowingCreateSerializer,
     BorrowingListAdminSerializer,
     BorrowingDetailAdminSerializer,
+    BorrowingReturnSerializer,
 )
 
 
@@ -52,7 +57,28 @@ class BorrowingViewSet(
         if self.action == "create":
             return BorrowingCreateSerializer
 
+        if self.action == "return_book":
+            return BorrowingReturnSerializer
+
         return BorrowingSerializer
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=["POST"], url_path="return")
+    def return_book(self, request, pk=None):
+        """Endpoint for borrowing return functionality"""
+        borrowing = self.get_object()
+        if borrowing.actual_return_date:
+            return Response(
+                {"message": "This book has already been returned"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        borrowing.actual_return_date = datetime.date.today()
+        borrowing.book.increase_inventory()
+        borrowing.save()
+        return Response(
+            {"message": "You have successfully returned the book"},
+            status=status.HTTP_200_OK,
+        )
