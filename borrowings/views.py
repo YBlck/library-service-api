@@ -1,5 +1,7 @@
 import datetime
 
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -64,6 +66,26 @@ class BorrowingViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="is_active",
+                description="Filter borrowings by status",
+                type=OpenApiTypes.BOOL,
+                required=False,
+            ),
+            OpenApiParameter(
+                name="user_id",
+                description="Filter borrowings by user_id",
+                type=OpenApiTypes.INT,
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Get list of borrowings"""
+        return super().list(request, *args, **kwargs)
 
     @action(detail=True, methods=["POST"], url_path="return")
     def return_book(self, request, pk=None):
