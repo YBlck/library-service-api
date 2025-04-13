@@ -11,6 +11,7 @@ from borrowings.models import Borrowing
 from borrowings.serializers import (
     BorrowingListSerializer,
     BorrowingDetailSerializer,
+    BorrowingListAdminSerializer,
 )
 
 BORROWINGS_URL = reverse("borrowings:borrowing-list")
@@ -18,6 +19,17 @@ BORROWINGS_URL = reverse("borrowings:borrowing-list")
 
 def get_detail_url(borrow_id):
     return reverse("borrowings:borrowing-detail", args=[borrow_id])
+
+
+def book_sample(**params):
+    defaults = {
+        "title": "Test_Book",
+        "author": "Test_Author",
+        "inventory": 10,
+        "daily_fee": 0.50,
+    }
+    defaults.update(params)
+    return Book.objects.create(**defaults)
 
 
 class BorrowingsAPITestCase(TestCase):
@@ -93,12 +105,7 @@ class AuthorizedUserTests(BorrowingsAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_create_borrowing(self):
-        book = Book.objects.create(
-            title="Test_Book",
-            author="Test_Author",
-            inventory=10,
-            daily_fee=0.50,
-        )
+        book = book_sample()
         payload = {
             "expected_return_date": datetime.date.today()
             + datetime.timedelta(days=5),
@@ -113,12 +120,7 @@ class AuthorizedUserTests(BorrowingsAPITestCase):
         self.assertEqual(borrowing.user, self.test_user)
 
     def test_create_forbidden_when_book_inventory_equal_to_zero(self):
-        book = Book.objects.create(
-            title="Test_Book",
-            author="Test_Author",
-            inventory=0,
-            daily_fee=0.50,
-        )
+        book = book_sample(inventory=0)
         payload = {
             "expected_return_date": datetime.date.today()
             + datetime.timedelta(days=5),
@@ -127,3 +129,46 @@ class AuthorizedUserTests(BorrowingsAPITestCase):
         response = self.client.post(BORROWINGS_URL, payload)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class AdminUserTests(BorrowingsAPITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.test_admin)
+
+    def test_borrowings_list(self):
+        response = self.client.get(BORROWINGS_URL)
+        borrowings = Borrowing.objects.all()
+        serializer = BorrowingListAdminSerializer(borrowings, many=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(len(response.data), borrowings.count())
+
+    def test_borrowings_filter_by_user_id(self):
+        response = self.client.get(
+            BORROWINGS_URL, data={"user_id": self.test_user.id}
+        )
+        borrowings = Borrowing.objects.filter(user=self.test_user)
+        serializer = BorrowingListAdminSerializer(borrowings, many=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(len(response.data), borrowings.count())
+
+    def test_borrowings_filter_by_is_active_status(self):
+        book = book_sample()
+        borrowing = Borrowing.objects.create(
+            expected_return_date=datetime.date.today()
+            + datetime.timedelta(days=1),
+            user=self.test_user,
+            book=book,
+        )
+        borrowing.actual_return_date = datetime.date.today()
+        response = self.client.get(BORROWINGS_URL, data={"is_active": True})
+        borrowings = Borrowing.objects.filter(actual_return_date__isnull=True)
+        serializer = BorrowingListAdminSerializer(borrowings, many=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(len(response.data), borrowings.count())
