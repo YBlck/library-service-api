@@ -32,6 +32,10 @@ def book_sample(**params):
     return Book.objects.create(**defaults)
 
 
+def return_day_sample():
+    return datetime.date.today() + datetime.timedelta(days=5)
+
+
 class BorrowingsAPITestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -48,14 +52,12 @@ class BorrowingsAPITestCase(TestCase):
             title="Book_2", author="Author_2", inventory=10, daily_fee=0.50
         )
         cls.borrowing_1 = Borrowing.objects.create(
-            expected_return_date=datetime.date.today()
-            + datetime.timedelta(days=3),
+            expected_return_date=return_day_sample(),
             user=cls.test_user,
             book=cls.book_1,
         )
         cls.borrowing_2 = Borrowing.objects.create(
-            expected_return_date=datetime.date.today()
-            + datetime.timedelta(days=3),
+            expected_return_date=return_day_sample(),
             user=cls.test_admin,
             book=cls.book_2,
         )
@@ -107,8 +109,7 @@ class AuthorizedUserTests(BorrowingsAPITestCase):
     def test_create_borrowing(self):
         book = book_sample()
         payload = {
-            "expected_return_date": datetime.date.today()
-            + datetime.timedelta(days=5),
+            "expected_return_date": return_day_sample(),
             "book": book.id,
         }
         response = self.client.post(BORROWINGS_URL, payload)
@@ -122,11 +123,40 @@ class AuthorizedUserTests(BorrowingsAPITestCase):
     def test_create_forbidden_when_book_inventory_equal_to_zero(self):
         book = book_sample(inventory=0)
         payload = {
-            "expected_return_date": datetime.date.today()
-            + datetime.timedelta(days=5),
+            "expected_return_date": return_day_sample(),
             "book": book.id,
         }
         response = self.client.post(BORROWINGS_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_borrowings_return(self):
+        book = book_sample()
+        borrowing = Borrowing.objects.create(
+            expected_return_date=return_day_sample(),
+            book=book,
+            user=self.test_user,
+        )
+        url = f"{BORROWINGS_URL}{borrowing.id}/return/"
+        response = self.client.post(url, data=None)
+        updated_borrowing = Borrowing.objects.get(id=borrowing.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            updated_borrowing.actual_return_date, datetime.date.today()
+        )
+        self.assertEqual(updated_borrowing.book.inventory, book.inventory + 1)
+
+    def test_borrowings_return_twice_forbidden(self):
+        book = book_sample()
+        borrowing = Borrowing.objects.create(
+            expected_return_date=return_day_sample(),
+            actual_return_date=datetime.date.today(),
+            book=book,
+            user=self.test_user,
+        )
+        url = f"{BORROWINGS_URL}{borrowing.id}/return/"
+        response = self.client.post(url, data=None)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -159,8 +189,7 @@ class AdminUserTests(BorrowingsAPITestCase):
     def test_borrowings_filter_by_is_active_status(self):
         book = book_sample()
         borrowing = Borrowing.objects.create(
-            expected_return_date=datetime.date.today()
-            + datetime.timedelta(days=1),
+            expected_return_date=return_day_sample(),
             user=self.test_user,
             book=book,
         )
