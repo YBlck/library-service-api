@@ -91,3 +91,39 @@ class AuthorizedUserTests(BorrowingsAPITestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_create_borrowing(self):
+        book = Book.objects.create(
+            title="Test_Book",
+            author="Test_Author",
+            inventory=10,
+            daily_fee=0.50,
+        )
+        payload = {
+            "expected_return_date": datetime.date.today()
+            + datetime.timedelta(days=5),
+            "book": book.id,
+        }
+        response = self.client.post(BORROWINGS_URL, payload)
+        borrowing = Borrowing.objects.get(id=response.data["id"])
+        borrowed_book = Book.objects.get(id=borrowing.book.id)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(borrowed_book.inventory, book.inventory - 1)
+        self.assertEqual(borrowing.user, self.test_user)
+
+    def test_create_forbidden_when_book_inventory_equal_to_zero(self):
+        book = Book.objects.create(
+            title="Test_Book",
+            author="Test_Author",
+            inventory=0,
+            daily_fee=0.50,
+        )
+        payload = {
+            "expected_return_date": datetime.date.today()
+            + datetime.timedelta(days=5),
+            "book": book.id,
+        }
+        response = self.client.post(BORROWINGS_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
