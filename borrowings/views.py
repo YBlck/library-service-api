@@ -20,7 +20,10 @@ class BorrowingViewSet(
     serializer_class = BorrowingSerializer
 
     def get_queryset(self):
-        queryset = self.queryset.filter(user=self.request.user)
+        user = self.request.user
+        queryset = self.queryset
+        if not user.is_staff:
+            queryset = self.queryset.filter(user=user)
         return queryset
 
     def get_serializer_class(self):
