@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 from rest_framework.exceptions import ValidationError
 
 
@@ -24,8 +25,11 @@ class Book(models.Model):
     def reduce_inventory(self):
         if self.inventory > 0:
             Book.objects.filter(pk=self.pk).update(
-                inventory=self.inventory - 1
+                inventory=F("inventory") - 1
             )
             self.refresh_from_db()
         else:
             raise ValidationError("This book is out of stock")
+
+    def increase_inventory(self):
+        Book.objects.filter(pk=self.pk).update(inventory=F("inventory") + 1)
