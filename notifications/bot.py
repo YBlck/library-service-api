@@ -4,6 +4,8 @@ from os import getenv
 from dotenv import load_dotenv
 from telegram import Bot
 
+from borrowings.models import Borrowing
+
 load_dotenv()
 
 TOKEN = getenv("BOT_TOKEN")
@@ -19,7 +21,7 @@ logging.basicConfig(
 
 def send_notification(message: str):
     try:
-        bot.send_message(chat_id=CHAT_ID, text=message)
+        bot.send_message(chat_id=CHAT_ID, text=message, parse_mode="HTML")
         logging.info("Message sent to Telegram")
     except Exception as e:
         logging.error(f"Failed to send Telegram message: {e}")
