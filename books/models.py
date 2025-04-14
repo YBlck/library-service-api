@@ -20,7 +20,8 @@ class Book(models.Model):
         ordering = ["title"]
 
     def __str__(self):
-        return f"{self.title} (author: {self.author}, inventory: {self.inventory})"
+        return (f"{self.title} (author: {self.author}, "
+                f"inventory: {self.inventory})")
 
     def reduce_inventory(self):
         if self.inventory > 0:

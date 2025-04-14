@@ -14,12 +14,13 @@ class Borrowing(models.Model):
         on_delete=models.CASCADE,
         related_name="borrowings",
     )
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="borrowings")
+    book = models.ForeignKey(
+        Book, on_delete=models.CASCADE, related_name="borrowings"
+    )
 
     def __str__(self):
-        return (
-            f"{self.borrowing_date}-{self.book}-{self.user}-{self.expected_return_date}"
-        )
+        return (f"{self.borrowing_date}-{self.book}-"
+                f"{self.user}-{self.expected_return_date}")
 
     class Meta:
         ordering = ["expected_return_date"]
