@@ -175,8 +175,8 @@ Q_CLUSTER = {
     "bulk": 10,
     "redis": {
         "host": getenv("REDIS_HOST"),
-        "port": 6379,
-        "db": 0,
+        "port": getenv("REDIS_PORT"),
+        "db": getenv("REDIS_DB"),
         "password": None,
         "socket_timeout": None,
         "charset": "utf-8",
