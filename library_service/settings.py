@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from datetime import timedelta
+from os import getenv
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -172,5 +173,14 @@ Q_CLUSTER = {
     "retry": 120,
     "queue_limit": 50,
     "bulk": 10,
-    "orm": "default",
+    "redis": {
+        "host": getenv("REDIS_HOST"),
+        "port": 6379,
+        "db": 0,
+        "password": None,
+        "socket_timeout": None,
+        "charset": "utf-8",
+        "errors": "strict",
+        "unix_socket_path": None,
+    },
 }
