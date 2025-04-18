@@ -185,3 +185,5 @@ Q_CLUSTER = {
         "unix_socket_path": None,
     },
 }
+
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
