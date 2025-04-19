@@ -13,6 +13,11 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 def create_checkout_session(borrowing, transaction_type, request: HttpRequest):
     amount = _calculate_amount(borrowing, transaction_type)
+    success_url = (
+        request.build_absolute_uri(reverse("payments:payment-success"))
+        + "?session_id={CHECKOUT_SESSION_ID}"
+    )
+    cancel_url = request.build_absolute_uri(reverse("payments:payment-cancel"))
     try:
         session = stripe.checkout.Session.create(
             line_items=[
@@ -28,13 +33,8 @@ def create_checkout_session(borrowing, transaction_type, request: HttpRequest):
                 }
             ],
             mode="payment",
-            success_url=(
-                reverse("payments:payment-success")
-                + "?session_id={CHECKOUT_SESSION_ID}"
-            ),  # build_absolute_uri not work here with stripe because of coding {} symbols
-            cancel_url=request.build_absolute_uri(
-                reverse("payments:payment-cancel")
-            ),
+            success_url=success_url,
+            cancel_url=cancel_url,
             metadata={
                 "borrowing_id": borrowing.id,
                 "transaction_type": transaction_type,
