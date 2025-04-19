@@ -2,6 +2,8 @@ from decimal import Decimal
 
 import stripe
 from django.conf import settings
+from django.http import HttpRequest
+from rest_framework.reverse import reverse
 
 from borrowings.models import Borrowing
 from payments.models import Payment
@@ -9,7 +11,7 @@ from payments.models import Payment
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-def create_checkout_session(borrowing, transaction_type):
+def create_checkout_session(borrowing, transaction_type, request: HttpRequest):
     amount = _calculate_amount(borrowing, transaction_type)
     try:
         session = stripe.checkout.Session.create(
@@ -26,8 +28,13 @@ def create_checkout_session(borrowing, transaction_type):
                 }
             ],
             mode="payment",
-            success_url="http://localhost:8000/api/payments/success/",  # will implement later
-            cancel_url="http://localhost:8000/api/payments/cancel/",  # will implement later
+            success_url=(
+                reverse("payments:payment-success")
+                + "?session_id={CHECKOUT_SESSION_ID}"
+            ),  # build_absolute_uri not work here with stripe because of coding {} symbols
+            cancel_url=request.build_absolute_uri(
+                reverse("payments:payment-cancel")
+            ),
             metadata={
                 "borrowing_id": borrowing.id,
                 "transaction_type": transaction_type,
