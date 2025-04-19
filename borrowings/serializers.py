@@ -9,7 +9,14 @@ from payments.models import Payment
 from payments.services import create_checkout_session
 
 
+class BorrowingPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ("id", "status", "type", "money_to_pay")
+
+
 class BorrowingSerializer(serializers.ModelSerializer):
+    payment = BorrowingPaymentSerializer(read_only=True)
 
     class Meta:
         model = Borrowing
@@ -19,6 +26,7 @@ class BorrowingSerializer(serializers.ModelSerializer):
             "expected_return_date",
             "actual_return_date",
             "book",
+            "payment",
         )
 
 
@@ -58,6 +66,7 @@ class BorrowingListSerializer(BorrowingSerializer):
 
 
 class BorrowingListAdminSerializer(BorrowingListSerializer):
+
     class Meta:
         model = Borrowing
         fields = (
@@ -67,6 +76,7 @@ class BorrowingListAdminSerializer(BorrowingListSerializer):
             "actual_return_date",
             "user",
             "book",
+            "payment",
         )
 
 
@@ -84,6 +94,7 @@ class BorrowingDetailAdminSerializer(BorrowingDetailSerializer):
             "actual_return_date",
             "user",
             "book",
+            "payment",
         )
 
 
