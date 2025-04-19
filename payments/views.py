@@ -2,7 +2,10 @@ from rest_framework import mixins
 from rest_framework.viewsets import GenericViewSet
 
 from payments.models import Payment
-from payments.serializers import PaymentSerializer
+from payments.serializers import (
+    PaymentSerializer,
+    PaymentListSerializer,
+)
 
 
 class PaymentsViewSet(
@@ -20,5 +23,9 @@ class PaymentsViewSet(
             if user.is_staff:
                 return queryset
             return queryset.filter(borrowing__user__id=user.id)
-
         return queryset
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return PaymentListSerializer
+        return PaymentSerializer
