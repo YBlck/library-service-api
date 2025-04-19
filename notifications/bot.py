@@ -33,7 +33,7 @@ def borrowing_create_notification(borrowing: Borrowing):
     message = (
         f"<b>New borrowing created!</b>\n"
         f"User: {user.email}\n"
-        f"Book: {book.title} ({book.inventory} left)\n"
+        f"Book: {book.title} ({book.inventory - 1} left)\n"
         f"Exp. return date: {borrowing.expected_return_date}\n"
     )
     send_notification(message)
