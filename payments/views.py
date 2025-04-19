@@ -58,6 +58,7 @@ class PaymentsViewSet(
 
     @action(detail=False, methods=["GET"], url_path="cancel")
     def cancel(self, request):
+        """Endpoint for cancel payment."""
         return Response(
             {"message": "Payment canceled. You can retry within 24h."},
             status=status.HTTP_200_OK,
