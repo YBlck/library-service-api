@@ -5,6 +5,7 @@ from payments.models import Payment
 from payments.serializers import (
     PaymentSerializer,
     PaymentListSerializer,
+    PaymentDetailSerializer,
 )
 
 
@@ -28,4 +29,6 @@ class PaymentsViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return PaymentListSerializer
+        if self.action == "retrieve":
+            return PaymentDetailSerializer
         return PaymentSerializer
