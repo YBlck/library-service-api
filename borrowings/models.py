@@ -34,3 +34,9 @@ class Borrowing(models.Model):
                 name="actual_return_date_gte_borrowing_date",
             ),
         ]
+
+    def get_duration_days(self):
+        return (self.expected_return_date - self.borrowing_date).days
+
+    def get_overdue_days(self):
+        return (self.actual_return_date - self.expected_return_date).days
