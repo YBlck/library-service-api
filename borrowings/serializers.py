@@ -1,12 +1,8 @@
-from django.db import transaction
 from rest_framework import serializers
 
-from books.models import Book
 from books.serializers import BookSerializer
 from borrowings.models import Borrowing
-from notifications.bot import borrowing_create_notification
 from payments.models import Payment
-from payments.services import create_checkout_session
 
 
 class BorrowingPaymentSerializer(serializers.ModelSerializer):
@@ -40,25 +36,6 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
         if book.inventory <= 0:
             raise serializers.ValidationError("This book is out of stock")
         return book
-
-    # thinking about moving creation to ViewSet...
-    def create(self, validated_data):
-        book = validated_data["book"]
-
-        with transaction.atomic():
-            book_for_update = Book.objects.select_for_update().get(pk=book.pk)
-            if book_for_update.inventory > 0:
-                book_for_update.reduce_inventory()
-                borrowing = Borrowing.objects.create(**validated_data)
-                create_checkout_session(
-                    borrowing, Payment.TransactionType.PAYMENT
-                ),
-                transaction.on_commit(
-                    lambda: borrowing_create_notification(borrowing)
-                )
-                return borrowing
-            else:
-                raise serializers.ValidationError("This book is out of stock")
 
 
 class BorrowingListSerializer(BorrowingSerializer):

@@ -1,5 +1,7 @@
 import datetime
 
+from django.db import transaction
+from django.http import HttpRequest
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import mixins, status
@@ -7,6 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from books.models import Book
 from borrowings.models import Borrowing
 from borrowings.serializers import (
     BorrowingSerializer,
@@ -17,6 +20,9 @@ from borrowings.serializers import (
     BorrowingDetailAdminSerializer,
     BorrowingReturnSerializer,
 )
+from notifications.bot import borrowing_create_notification
+from payments.models import Payment
+from payments.services import create_checkout_session
 
 
 class BorrowingViewSet(
@@ -64,8 +70,42 @@ class BorrowingViewSet(
 
         return BorrowingSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def create(self, request: HttpRequest, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        book = serializer.validated_data["book"]
+
+        with transaction.atomic():
+            book_for_update = Book.objects.select_for_update().get(pk=book.pk)
+            if book_for_update.inventory > 0:
+                book_for_update.reduce_inventory()
+                borrowing = Borrowing.objects.create(
+                    book=book,
+                    borrowing_date=serializer.validated_data.get(
+                        "borrowing_date"
+                    ),
+                    expected_return_date=serializer.validated_data.get(
+                        "expected_return_date"
+                    ),
+                    user=request.user,
+                )
+                payment_url = create_checkout_session(
+                    borrowing, Payment.TransactionType.PAYMENT, request
+                )
+                transaction.on_commit(
+                    lambda: borrowing_create_notification(borrowing)
+                )
+                return Response(
+                    {
+                        "borrowing": self.get_serializer(borrowing).data,
+                        "payment_url": payment_url,
+                    },
+                    status=201,
+                )
+            else:
+                return Response(
+                    {"error": "This book is out of stock"}, status=400
+                )
 
     @extend_schema(
         parameters=[
