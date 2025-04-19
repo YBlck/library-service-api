@@ -113,7 +113,7 @@ class AuthorizedUserTests(BorrowingsAPITestCase):
             "book": book.id,
         }
         response = self.client.post(BORROWINGS_URL, payload)
-        borrowing = Borrowing.objects.get(id=response.data["id"])
+        borrowing = Borrowing.objects.get(id=response.data["borrowing"]["id"])
         borrowed_book = Book.objects.get(id=borrowing.book.id)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
