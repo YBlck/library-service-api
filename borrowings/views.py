@@ -131,16 +131,46 @@ class BorrowingViewSet(
     def return_book(self, request, pk=None):
         """Endpoint for borrowing return functionality"""
         borrowing = self.get_object()
+        today = datetime.date.today()
+
         if borrowing.actual_return_date:
             return Response(
                 {"message": "This book has already been returned"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        borrowing.actual_return_date = datetime.date.today()
-        borrowing.book.increase_inventory()
-        borrowing.save()
-        return Response(
-            {"message": "You have successfully returned the book"},
-            status=status.HTTP_200_OK,
-        )
+        if borrowing.expected_return_date >= today:
+            borrowing.return_borrowing()
+            return Response(
+                {"message": "You have successfully returned the book"},
+                status=status.HTTP_200_OK,
+            )
+
+        if borrowing.expected_return_date < today:
+            fine_payment = borrowing.payments.filter(type=Payment.TransactionType.FINE).first()
+            if fine_payment:
+                if fine_payment.status == Payment.PaymentStatus.PAID:
+                    borrowing.return_borrowing()
+                    return Response(
+                        {"message": "You have successfully returned the book"},
+                        status=status.HTTP_200_OK,
+                    )
+                else:
+                    return Response(
+                        {
+                            "message": "You have to pay the fine before returning the book",
+                            "payment_url": fine_payment.session_url,
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                session_url = create_checkout_session(
+                    borrowing, Payment.TransactionType.FINE, request
+                )
+                return Response(
+                    {
+                        "message": "You are late! Please pay the fine before returning the book.",
+                        "payment_url": session_url,
+                    },
+                    status=status.HTTP_202_ACCEPTED,
+                )
