@@ -43,7 +43,7 @@ class Borrowing(models.Model):
         return (self.expected_return_date - self.borrowing_date).days
 
     def get_overdue_days(self):
-        return (self.actual_return_date - self.expected_return_date).days
+        return (datetime.date.today() - self.expected_return_date).days
 
     def return_borrowing(self):
         self.actual_return_date = datetime.date.today()
