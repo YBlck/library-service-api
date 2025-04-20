@@ -16,8 +16,8 @@ class Payment(models.Model):
         max_length=7, choices=PaymentStatus, default=PaymentStatus.PENDING
     )
     type = models.CharField(max_length=7, choices=TransactionType)
-    borrowing = models.OneToOneField(
-        Borrowing, on_delete=models.CASCADE, related_name="payment"
+    borrowing = models.ForeignKey(
+        Borrowing, on_delete=models.CASCADE, related_name="payments"
     )
     session_url = models.URLField()
     session_id = models.CharField(max_length=255)

@@ -8,11 +8,11 @@ from payments.models import Payment
 class BorrowingPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ("id", "status", "type", "money_to_pay")
+        fields = ("id", "status", "type", "money_to_pay", "session_url")
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
-    payment = BorrowingPaymentSerializer(read_only=True)
+    payments = BorrowingPaymentSerializer(read_only=True, many=True)
 
     class Meta:
         model = Borrowing
@@ -22,7 +22,7 @@ class BorrowingSerializer(serializers.ModelSerializer):
             "expected_return_date",
             "actual_return_date",
             "book",
-            "payment",
+            "payments",
         )
 
 
@@ -53,7 +53,7 @@ class BorrowingListAdminSerializer(BorrowingListSerializer):
             "actual_return_date",
             "user",
             "book",
-            "payment",
+            "payments",
         )
 
 
@@ -71,7 +71,7 @@ class BorrowingDetailAdminSerializer(BorrowingDetailSerializer):
             "actual_return_date",
             "user",
             "book",
-            "payment",
+            "payments",
         )
 
 
