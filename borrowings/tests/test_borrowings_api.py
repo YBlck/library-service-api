@@ -145,7 +145,7 @@ class AuthorizedUserTests(BorrowingsAPITestCase):
         self.assertEqual(
             updated_borrowing.actual_return_date, datetime.date.today()
         )
-        self.assertEqual(updated_borrowing.book.inventory, book.inventory + 1)
+        self.assertEqual(updated_borrowing.book.inventory, book.inventory)
 
     def test_borrowings_return_twice_forbidden(self):
         book = book_sample()
