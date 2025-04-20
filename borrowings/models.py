@@ -1,3 +1,5 @@
+import datetime
+
 from django.conf import settings
 from django.db import models
 from django.db.models import Q, F
@@ -19,8 +21,10 @@ class Borrowing(models.Model):
     )
 
     def __str__(self):
-        return (f"{self.borrowing_date}-{self.book}-"
-                f"{self.user}-{self.expected_return_date}")
+        return (
+            f"{self.borrowing_date}-{self.book}-"
+            f"{self.user}-{self.expected_return_date}"
+        )
 
     class Meta:
         ordering = ["expected_return_date"]
@@ -40,3 +44,9 @@ class Borrowing(models.Model):
 
     def get_overdue_days(self):
         return (self.actual_return_date - self.expected_return_date).days
+
+    def return_borrowing(self):
+        self.actual_return_date = datetime.date.today()
+        self.book.increase_inventory()
+        self.book.save()
+        self.save()
