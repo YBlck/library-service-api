@@ -45,12 +45,15 @@ class PaymentsViewSet(
             return Response({"error": "Missing session_id"}, status=400)
 
         session = stripe.checkout.Session.retrieve(session_id)
+        transaction_type = session["metadata"]["transaction_type"]
 
         if session.payment_status == "paid":
             try:
                 payment = Payment.objects.get(session_id=session_id)
                 payment.status = Payment.PaymentStatus.PAID
                 payment.save()
+                if transaction_type == Payment.TransactionType.FINE:
+                    payment.borrowing.return_borrowing()
                 return Response({"message": "Payment successful"})
             except Payment.DoesNotExist:
                 return Response({"error": "Payment not found"}, status=404)
