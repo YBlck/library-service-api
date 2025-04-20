@@ -58,7 +58,7 @@ def create_checkout_session(borrowing, transaction_type, request: HttpRequest):
 def _calculate_amount(borrowing: Borrowing, transaction_type) -> Decimal:
     if transaction_type == Payment.TransactionType.PAYMENT:
         price = Decimal(borrowing.book.daily_fee)
-        return price * borrowing.get_duration_days()
+        return price * max(borrowing.get_duration_days(), 1)
     elif transaction_type == Payment.TransactionType.FINE:
         price = (
             Decimal(borrowing.book.daily_fee) * 2
