@@ -1,4 +1,5 @@
 import datetime
+from unittest.mock import patch, MagicMock
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -8,6 +9,7 @@ from rest_framework.test import APIClient
 
 from books.models import Book
 from borrowings.models import Borrowing
+
 from payments.models import Payment
 from payments.serializers import PaymentListSerializer, PaymentDetailSerializer
 
@@ -16,6 +18,17 @@ PAYMENT_URL = reverse("payments:payment-list")
 
 def get_detail_url(payment_id):
     return reverse("payments:payment-detail", args=[payment_id])
+
+
+def book_sample(**params):
+    defaults = {
+        "title": "Test_Book",
+        "author": "Test_Author",
+        "inventory": 10,
+        "daily_fee": 0.50,
+    }
+    defaults.update(params)
+    return Book.objects.create(**defaults)
 
 
 def return_day_sample():
@@ -66,7 +79,6 @@ class PaymentsAPITestCase(TestCase):
 
 
 class UnauthorizedUserTests(PaymentsAPITestCase):
-
     def test_payments_list_authorization_required(self):
         response = self.client.get(PAYMENT_URL)
 
@@ -107,6 +119,43 @@ class AuthorizedUserTests(PaymentsAPITestCase):
         response = self.client.get(get_detail_url(self.payment_2.id))
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    @patch("payments.views.stripe.checkout.Session.retrieve")
+    def test_payment_success(self, mock_retrieve):
+        book = book_sample()
+        borrowing = Borrowing.objects.create(
+            expected_return_date=return_day_sample(),
+            book=book,
+            user=self.test_user,
+        )
+        payment = Payment.objects.create(
+            status="PENDING",
+            type="PAYMENT",
+            borrowing=borrowing,
+            session_url="https://example.com",
+            session_id="cs_test_session_id",
+            money_to_pay=10,
+        )
+        mock_session = MagicMock()
+        mock_session.__getitem__.side_effect = lambda key: {
+            "metadata": {"transaction_type": "PAYMENT"}
+        }[key]
+        mock_session.payment_status = "paid"
+        mock_retrieve.return_value = mock_session
+
+        url_with_out_session_id = PAYMENT_URL + "success/"
+        response = self.client.get(url_with_out_session_id)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        url_with_session_id = (
+            PAYMENT_URL + f"success/?session_id={payment.session_id}"
+        )
+        response = self.client.get(url_with_session_id)
+        updated_payment = Payment.objects.get(id=payment.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(updated_payment.status, Payment.PaymentStatus.PAID)
 
 
 class AdminUserTests(PaymentsAPITestCase):
