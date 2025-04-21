@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="payment",
             name="session_url",
-            field=models.URLField(max_length=500),
+            field=models.URLField(max_length=510),
         ),
     ]
