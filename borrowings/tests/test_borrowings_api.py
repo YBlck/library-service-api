@@ -38,11 +38,6 @@ def return_day_sample():
     return datetime.date.today() + datetime.timedelta(days=3)
 
 
-def fake_today_sample():
-    """For testing overdue borrowings"""
-    return datetime.date.today() + datetime.timedelta(days=5)
-
-
 class BorrowingsAPITestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
