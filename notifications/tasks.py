@@ -1,6 +1,6 @@
 import datetime
 from borrowings.models import Borrowing
-from notifications.bot import send_notification
+from notifications.telegram_bot import send_notification
 
 def check_overdue_borrowings():
     today = datetime.date.today()

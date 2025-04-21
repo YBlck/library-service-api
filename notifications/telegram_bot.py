@@ -13,10 +13,10 @@ CHAT_ID = getenv("CHAT_ID")
 
 bot = Bot(token=TOKEN)
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+# logging.basicConfig(
+#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+#     level=logging.INFO,
+# )
 
 
 def send_notification(message: str):
