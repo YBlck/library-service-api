@@ -20,7 +20,7 @@ from borrowings.serializers import (
     BorrowingDetailAdminSerializer,
     BorrowingReturnSerializer,
 )
-from notifications.telegram_bot import borrowing_create_notification
+from notifications.telegram import borrowing_create_notification
 from payments.models import Payment
 from payments.services import create_checkout_session
 

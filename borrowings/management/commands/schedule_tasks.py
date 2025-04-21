@@ -13,7 +13,7 @@ class Command(BaseCommand):
         Schedule.objects.update_or_create(
             name="Send overdue borrowings",
             defaults={
-                "func": "notifications.tasks.check_overdue_borrowings",
+                "func": "notifications.telegram.check_overdue_borrowings",
                 "schedule_type": Schedule.DAILY,
                 "next_run": run_time,
                 "repeats": -1,
