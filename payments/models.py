@@ -24,4 +24,5 @@ class Payment(models.Model):
     money_to_pay = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"{self.borrowing.user.email} - {self.money_to_pay}$ - {self.status}"
+        return (f"{self.borrowing.user.email} - "
+                f"{self.money_to_pay}$ - {self.status}")

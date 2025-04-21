@@ -147,7 +147,9 @@ class BorrowingViewSet(
             )
 
         if borrowing.expected_return_date < today:
-            fine_payment = borrowing.payments.filter(type=Payment.TransactionType.FINE).first()
+            fine_payment = borrowing.payments.filter(
+                type=Payment.TransactionType.FINE
+            ).first()
             if fine_payment:
                 if fine_payment.status == Payment.PaymentStatus.PAID:
                     borrowing.return_borrowing()
@@ -158,7 +160,8 @@ class BorrowingViewSet(
                 else:
                     return Response(
                         {
-                            "message": "You have to pay the fine before returning the book",
+                            "message": "You have to pay the fine "
+                                       "before returning the book",
                             "payment_url": fine_payment.session_url,
                         },
                         status=status.HTTP_400_BAD_REQUEST,
@@ -169,7 +172,8 @@ class BorrowingViewSet(
                 )
                 return Response(
                     {
-                        "message": "You are late! Please pay the fine before returning the book.",
+                        "message": "You are late! Please pay the "
+                                   "fine before returning the book.",
                         "payment_url": session_url,
                     },
                     status=status.HTTP_202_ACCEPTED,

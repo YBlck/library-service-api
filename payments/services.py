@@ -25,7 +25,8 @@ def create_checkout_session(borrowing, transaction_type, request: HttpRequest):
                     "price_data": {
                         "currency": "usd",
                         "product_data": {
-                            "name": f"{transaction_type} for {borrowing.book.title}",
+                            "name": f"{transaction_type} for "
+                                    f"{borrowing.book.title}",
                         },
                         "unit_amount": int(amount * 100),
                     },
@@ -43,7 +44,7 @@ def create_checkout_session(borrowing, transaction_type, request: HttpRequest):
     except Exception as e:
         return str(e)
 
-    payment = Payment.objects.create(
+    Payment.objects.create(
         status=Payment.PaymentStatus.PENDING,
         type=transaction_type,
         borrowing=borrowing,

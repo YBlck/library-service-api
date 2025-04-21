@@ -2,11 +2,11 @@ import datetime
 from borrowings.models import Borrowing
 from notifications.telegram_bot import send_notification
 
+
 def check_overdue_borrowings():
     today = datetime.date.today()
     overdue_borrowings = Borrowing.objects.filter(
-        expected_return_date__lt=today,
-        actual_return_date__isnull=True
+        expected_return_date__lt=today, actual_return_date__isnull=True
     )
 
     if overdue_borrowings.exists():
