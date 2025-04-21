@@ -38,11 +38,14 @@ class PaymentsViewSet(
 
     @action(detail=False, methods=["GET"], url_path="success")
     def success(self, request):
-        """Endpoint for successful payments."""
+        """Endpoint for successful payments"""
         session_id = request.query_params.get("session_id")
 
         if not session_id:
-            return Response({"error": "Missing session_id"}, status=400)
+            return Response(
+                {"error": "Missing session_id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         session = stripe.checkout.Session.retrieve(session_id)
         transaction_type = session["metadata"]["transaction_type"]
@@ -54,14 +57,23 @@ class PaymentsViewSet(
                 payment.save()
                 if transaction_type == Payment.TransactionType.FINE:
                     payment.borrowing.return_borrowing()
-                return Response({"message": "Payment successful"})
+                return Response(
+                    {"message": "Payment successful"},
+                    status=status.HTTP_200_OK,
+                )
             except Payment.DoesNotExist:
-                return Response({"error": "Payment not found"}, status=404)
-        return Response({"error": "Payment not completed"}, status=400)
+                return Response(
+                    {"error": "Payment not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        return Response(
+            {"error": "Payment not completed"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     @action(detail=False, methods=["GET"], url_path="cancel")
     def cancel(self, request):
-        """Endpoint for cancel payment."""
+        """Endpoint for cancel payment"""
         return Response(
             {"message": "Payment canceled. You can retry within 24h."},
             status=status.HTTP_200_OK,
