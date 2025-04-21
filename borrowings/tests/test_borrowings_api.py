@@ -1,5 +1,6 @@
 import datetime
 
+from attr.setters import validate
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
@@ -13,6 +14,7 @@ from borrowings.serializers import (
     BorrowingDetailSerializer,
     BorrowingListAdminSerializer,
 )
+from payments.models import Payment
 
 BORROWINGS_URL = reverse("borrowings:borrowing-list")
 
@@ -33,6 +35,11 @@ def book_sample(**params):
 
 
 def return_day_sample():
+    return datetime.date.today() + datetime.timedelta(days=3)
+
+
+def fake_today_sample():
+    """For testing overdue borrowings"""
     return datetime.date.today() + datetime.timedelta(days=5)
 
 
@@ -64,7 +71,6 @@ class BorrowingsAPITestCase(TestCase):
 
 
 class UnauthorizedUserTests(BorrowingsAPITestCase):
-
     def test_borrowings_list_authorization_required(self):
         response = self.client.get(BORROWINGS_URL)
 
@@ -115,10 +121,12 @@ class AuthorizedUserTests(BorrowingsAPITestCase):
         response = self.client.post(BORROWINGS_URL, payload)
         borrowing = Borrowing.objects.get(id=response.data["borrowing"]["id"])
         borrowed_book = Book.objects.get(id=borrowing.book.id)
+        payment = borrowing.payments.first()
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(borrowed_book.inventory, book.inventory - 1)
         self.assertEqual(borrowing.user, self.test_user)
+        self.assertEqual(payment.type, Payment.TransactionType.PAYMENT)
 
     def test_create_forbidden_when_book_inventory_equal_to_zero(self):
         book = book_sample(inventory=0)
@@ -146,6 +154,43 @@ class AuthorizedUserTests(BorrowingsAPITestCase):
             updated_borrowing.actual_return_date, datetime.date.today()
         )
         self.assertEqual(updated_borrowing.book.inventory, book.inventory)
+
+    def test_borrowings_overdue_return(self):
+        book = book_sample()
+        borrowing = Borrowing.objects.create(
+            expected_return_date=return_day_sample(),
+            user=self.test_user,
+            book=book,
+        )
+        borrowing.borrowing_date = datetime.date.today() - datetime.timedelta(
+            days=5
+        )
+        borrowing.expected_return_date = (
+            datetime.date.today() - datetime.timedelta(days=3)
+        )
+        borrowing.save(
+            update_fields=["borrowing_date", "expected_return_date"]
+        )
+
+        url = f"{BORROWINGS_URL}{borrowing.id}/return/"
+        response = self.client.post(url, data=None)
+        overdue_borrowing = Borrowing.objects.get(id=borrowing.id)
+        fine_payment = overdue_borrowing.payments.first()
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(borrowing.actual_return_date, None)
+        self.assertEqual(fine_payment.type, Payment.TransactionType.FINE)
+
+        fine_payment.status = Payment.PaymentStatus.PAID
+        fine_payment.save()
+        response = self.client.post(url, data=None)
+        paid_borrowing = Borrowing.objects.get(id=borrowing.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            paid_borrowing.actual_return_date, datetime.date.today()
+        )
+        self.assertEqual(paid_borrowing.book.inventory, book.inventory)
 
     def test_borrowings_return_twice_forbidden(self):
         book = book_sample()
