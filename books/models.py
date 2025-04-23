@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import F
+from rest_framework.exceptions import ValidationError
 
 
 class Book(models.Model):
@@ -18,4 +20,17 @@ class Book(models.Model):
         ordering = ["title"]
 
     def __str__(self):
-        return f"{self.title} (author: {self.author})"
+        return (f"{self.title} (author: {self.author}, "
+                f"inventory: {self.inventory})")
+
+    def reduce_inventory(self):
+        if self.inventory > 0:
+            Book.objects.filter(pk=self.pk).update(
+                inventory=F("inventory") - 1
+            )
+            self.refresh_from_db()
+        else:
+            raise ValidationError("This book is out of stock")
+
+    def increase_inventory(self):
+        Book.objects.filter(pk=self.pk).update(inventory=F("inventory") + 1)
